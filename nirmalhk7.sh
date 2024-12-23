@@ -14,6 +14,7 @@ alias gst='git status'
 
 export PATH="/Users/nirmalhk7/Downloads/google-cloud-sdk/bin:$PATH"
 export PATH="/usr/local/go/bin:$PATH"
+export PATH="~/.linkerd2/bin:$PATH"
 
 function port_forward() {
     local service_name=$1
@@ -34,3 +35,4 @@ function port_forward() {
         echo "Port forwarding for service $service_name setup successfully."
     fi
 }
+
