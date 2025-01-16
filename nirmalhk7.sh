@@ -11,6 +11,7 @@ unset gs
 alias gpsup='git push --set-upstream origin "$(git-branch-current 2> /dev/null)"'
 alias gcasm='git commit -asm'
 alias gst='git status'
+alias npmi='npm install --legacy-peer-deps'
 
 export PATH="/Users/nirmalhk7/Downloads/google-cloud-sdk/bin:$PATH"
 export PATH="/usr/local/go/bin:$PATH"
