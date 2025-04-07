@@ -1,0 +1,2 @@
+#!/bin/bash
+exec < /dev/tty && /Users/nirmalhk7/.nvm/versions/node/$(node -v)/bin/cz --hook || true

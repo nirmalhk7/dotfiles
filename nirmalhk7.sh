@@ -12,10 +12,14 @@ alias gpsup='git push --set-upstream origin "$(git-branch-current 2> /dev/null)"
 alias gcasm='git commit -asm'
 alias gst='git status'
 alias npmi='npm install --legacy-peer-deps'
+alias milano_shotdown="ssh -t milano sudo shutdown now"
 
 export PATH="/Users/nirmalhk7/Downloads/google-cloud-sdk/bin:$PATH"
 export PATH="/usr/local/go/bin:$PATH"
 export PATH="~/.linkerd2/bin:$PATH"
+export KUBECONFIG="/Users/nirmalhk7/Documents/DevWorld/dotfiles/config.yaml"
+export python="/opt/anaconda3/bin/python"
+
 
 function port_forward() {
     local service_name=$1
