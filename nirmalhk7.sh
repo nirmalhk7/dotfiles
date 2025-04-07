@@ -10,6 +10,7 @@ unset gpc
 unset gs
 alias gpsup='git push --set-upstream origin "$(git-branch-current 2> /dev/null)"'
 alias gcasm='git commit -asm'
+alias gx='git cz -as'
 alias gst='git status'
 alias npmi='npm install --legacy-peer-deps'
 alias milano_shotdown="ssh -t milano sudo shutdown now"

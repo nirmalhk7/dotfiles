@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# echo "Running prepare-commit-msg hook" >> /tmp/hook-debug.log
+# exec < /dev/tty && /Users/nirmalhk7/.nvm/versions/node/$(node -v)/bin/cz --hook || true
