@@ -1,0 +1,9 @@
+# This is Git's per-user configuration file.
+[user]
+# Please adapt and uncomment the following lines:
+	name = Nirmal Khedkar
+	email = nirmalhk7@gmail.com
+[core]
+	hooksPath = /Users/nirmalhk7/Documents/DevWorld/dotfiles/hooks
+[alias]
+	commit = !cz
