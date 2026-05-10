@@ -126,8 +126,8 @@ def main():
     for i, commit in enumerate(commits):
         print(f"  {i+1}. [{commit['message']}] -> {', '.join(commit['files'])}")
     
-    confirm = input("\nProceed with these commits? (y/N): ")
-    if confirm.lower() != 'y':
+    confirm = input("\nProceed with these commits? (Y/n): ")
+    if confirm.lower() == 'n':
         print("Aborted. Falling back to manual commit.")
         fallback_commit()
         return
