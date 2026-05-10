@@ -9,7 +9,7 @@ alias gia='git add'
 alias gpsup='git push --set-upstream origin "$(git branch --show-current 2> /dev/null)"'
 alias gcasm='gia . && git commit -asm'
 alias gx='git cz -as'
-alias gllm='python /Users/nirmalhk7/Documents/DevWorld/dotfiles/scripts/gllm.py'
+alias gllm='/Users/nirmalhk7/Documents/DevWorld/dotfiles/.venv/bin/python /Users/nirmalhk7/Documents/DevWorld/dotfiles/scripts/gllm.py'
 alias gst='git status'
 alias fst='git status'
 
