@@ -139,15 +139,26 @@ def main():
         message = commit['message']
         files = commit['files']
         
-        existing_files = [f for f in files if os.path.exists(f)]
-        if not existing_files:
-            print(f"Skipping commit '{message}' as no files were found.")
+        valid_files = []
+        for f in files:
+            if os.path.exists(f):
+                valid_files.append(f)
+            else:
+                try:
+                    # Check if file was deleted but is still known to git
+                    subprocess.run(["git", "ls-files", "--error-unmatch", f], check=True, capture_output=True)
+                    valid_files.append(f)
+                except subprocess.CalledProcessError:
+                    pass
+
+        if not valid_files:
+            print(f"Skipping commit '{message}' as no valid files were found.")
             continue
 
         print(f"Committing: {message}...")
         try:
-            subprocess.run(["git", "add"] + existing_files, check=True)
-            subprocess.run(["git", "commit", "-S", "-m", message], check=True)
+            subprocess.run(["git", "add"] + valid_files, check=True)
+            subprocess.run(["git", "commit", "-s", "-m", message], check=True)
         except subprocess.CalledProcessError as e:
             print(f"Error during commit: {e}")
             print("Stopping sequence.")
