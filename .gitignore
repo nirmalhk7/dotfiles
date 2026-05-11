@@ -1,3 +1,4 @@
 config.yaml
 .env
 .venv
+gke_gcloud_auth_plugin_cache
