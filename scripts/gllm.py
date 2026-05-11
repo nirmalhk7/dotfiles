@@ -144,10 +144,9 @@ def main():
     # Range of models to try in order
     models_to_try = [
         'gemini-2.5-flash',
-        'gemini-2.0-flash', 
-        'gemini-2.0-flash-lite',
-        'gemini-flash-latest',
-        'gemini-pro-latest'
+        "gemma-4-31b-it",
+        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite-preview"
     ]
 
     commits = None
