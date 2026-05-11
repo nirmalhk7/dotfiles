@@ -112,13 +112,35 @@ def main():
         print(f"Error: GEMINI_API_KEY not found in {env_path}")
         sys.exit(1)
         
-    diff = get_git_diff()
-    if not diff.strip():
+    diff_text = get_git_diff()
+    if not diff_text.strip():
         print("No changes detected.")
+        return
+
+    hunks = parse_diff(diff_text)
+    if not hunks:
+        print("No parseable hunks found.")
         return
 
     client = genai.Client(api_key=api_key)
     
+    # Format hunks for the prompt
+    hunks_formatted = ""
+    for h in hunks:
+        hunks_formatted += f"--- HUNK {h.id} (File: {h.filename}) ---\n{h.hunk_header}\n{h.hunk_content}\n\n"
+
+    prompt = f"""
+    Analyze the following git diff hunks and group them into logical commits.
+    Rules:
+    - Group hunks that are related to the same feature or fix.
+    - Each hunk ID MUST belong to exactly one commit.
+    - Commit messages MUST be in Commitizen format: <type>(<scope>): <description>
+      Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+    
+    GIT DIFF HUNKS:
+    {hunks_formatted}
+    """
+
     # Range of models to try in order
     models_to_try = [
         'gemini-2.5-flash',
@@ -127,19 +149,6 @@ def main():
         'gemini-flash-latest',
         'gemini-pro-latest'
     ]
-
-    prompt = f"""
-    Analyze the following git diff and group the changes into logical commits.
-    Rules:
-    - Group changes that are related to the same feature or fix.
-    - Each file can only belong to one commit in this sequential packing.
-    - If a file has multiple unrelated changes, just pick the most prominent one or group it with the majority.
-    - Commit messages MUST be in Commitizen format: <type>(<scope>): <description>
-      Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
-    
-    GIT DIFF:
-    {diff}
-    """
 
     commits = None
     for model_name in models_to_try:
@@ -176,8 +185,10 @@ def main():
         return
 
     print(f"\nProposed {len(commits)} commits:")
+    hunk_map = {h.id: h for h in hunks}
     for i, commit in enumerate(commits):
-        print(f"  {i+1}. [{commit['message']}] -> {', '.join(commit['files'])}")
+        affected_files = sorted(list(set(hunk_map[hid].filename for hid in commit['hunk_ids'] if hid in hunk_map)))
+        print(f"  {i+1}. [{commit['message']}] -> hunks: {commit['hunk_ids']} ({', '.join(affected_files)})")
     
     confirm = input("\nProceed with these commits? (Y/n): ")
     if confirm.lower() == 'n':
@@ -190,27 +201,30 @@ def main():
 
     for commit in commits:
         message = commit['message']
-        files = commit['files']
+        hunk_ids = commit['hunk_ids']
         
-        valid_files = []
-        for f in files:
-            if os.path.exists(f):
-                valid_files.append(f)
-            else:
-                try:
-                    # Check if file was deleted but is still known to git
-                    subprocess.run(["git", "ls-files", "--error-unmatch", f], check=True, capture_output=True)
-                    valid_files.append(f)
-                except subprocess.CalledProcessError:
-                    pass
-
-        if not valid_files:
-            print(f"Skipping commit '{message}' as no valid files were found.")
+        selected_hunks = [hunk_map[hid] for hid in hunk_ids if hid in hunk_map]
+        if not selected_hunks:
+            print(f"Skipping commit '{message}' as no valid hunks were found.")
             continue
 
         print(f"Committing: {message}...")
+        
+        # Create patch text
+        patch_text = "".join(h.to_patch() for h in selected_hunks)
+        
         try:
-            subprocess.run(["git", "add"] + valid_files, check=True)
+            # Apply patch to index
+            process = subprocess.Popen(["git", "apply", "--cached", "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            stdout, stderr = process.communicate(input=patch_text)
+            
+            if process.returncode != 0:
+                print(f"Error: Failed to apply patch for hunk(s) {hunk_ids}")
+                print(stderr)
+                # Try to apply with --recount or --3way if available? For now, just fail.
+                print("Stopping sequence.")
+                break
+                
             subprocess.run(["git", "commit", "-s", "-m", message], check=True)
         except subprocess.CalledProcessError as e:
             print(f"Error during commit: {e}")
