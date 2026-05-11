@@ -17,23 +17,76 @@ except ImportError:
 
 class Commit(BaseModel):
     message: str
-    files: list[str]
+    hunk_ids: list[int]
 
 class CommitList(BaseModel):
     commits: list[Commit]
 
+class Hunk:
+    def __init__(self, id, file_header, hunk_header, hunk_content, filename):
+        self.id = id
+        self.file_header = file_header
+        self.hunk_header = hunk_header
+        self.hunk_content = hunk_content
+        self.filename = filename
+
+    def to_patch(self):
+        return f"{self.file_header}\n{self.hunk_header}\n{self.hunk_content}\n"
+
+import re
+
+def parse_diff(diff_text):
+    hunks = []
+    current_file_header = []
+    current_filename = None
+    hunk_id = 1
+    
+    lines = diff_text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("diff --git"):
+            current_file_header = [line]
+            # Match the filename in b/path/to/file
+            match = re.search(r" b/(.*)", line)
+            current_filename = match.group(1) if match else "unknown"
+            i += 1
+            while i < len(lines) and not lines[i].startswith("@@"):
+                # Collect headers like --- and +++
+                current_file_header.append(lines[i])
+                i += 1
+            continue
+        
+        if line.startswith("@@"):
+            hunk_header = line
+            hunk_content = []
+            i += 1
+            while i < len(lines) and not lines[i].startswith("@@") and not lines[i].startswith("diff --git"):
+                hunk_content.append(lines[i])
+                i += 1
+            
+            hunks.append(Hunk(
+                id=hunk_id,
+                file_header="\n".join(current_file_header),
+                hunk_header=hunk_header,
+                hunk_content="\n".join(hunk_content),
+                filename=current_filename
+            ))
+            hunk_id += 1
+            continue
+        
+        i += 1
+    return hunks
+
 def get_git_diff():
-    # Get all changes (staged and unstaged)
+    # Get all changes (staged and unstaged) relative to HEAD
     try:
         # Check if we are in a git repo
         subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], check=True, capture_output=True)
         
-        # Get staged changes
-        staged = subprocess.run(["git", "diff", "--cached"], capture_output=True, text=True).stdout
-        # Get unstaged changes
-        unstaged = subprocess.run(["git", "diff"], capture_output=True, text=True).stdout
-        
-        return staged + "\n" + unstaged
+        # git diff HEAD includes both staged and unstaged changes of tracked files
+        diff = subprocess.run(["git", "diff", "HEAD"], capture_output=True, text=True).stdout
+        return diff
     except subprocess.CalledProcessError:
         print("Error: Not a git repository.")
         sys.exit(1)
