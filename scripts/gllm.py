@@ -206,8 +206,6 @@ def main():
         if not selected_hunks:
             print(f"Skipping commit '{message}' as no valid hunks were found.")
             continue
-
-        print(f"Committing: {message}...")
         
         # Create patch text
         patch_text = "".join(h.to_patch() for h in selected_hunks)
